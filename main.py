@@ -8,7 +8,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
-source_path = r"C:\Users\Nutzer\Desktop\Klausuren_Test.xlsx"
+source_path = r"C:\Users\Nutzer\Desktop\Klausuren_Test_1.xlsx"
 
 # Erzeugen eines Data-Frames.
 df = pd.read_excel(source_path)
@@ -29,6 +29,10 @@ points_per_excercise_max = {}
 for pos, data in df_points.iterrows():
     if pd.isna(data[0]):  # Falls keine Zahl eingetragen ist, überspringen.
         pass
+    # Überprüfen, ob die zu erreichende Punktzahl eine Dezimalstelle hat.
+    elif str(data[1])[-1] == "0":
+        # Wenn z.B. 9.0 zu erreichen, dann soll nur 9 in der Tabelle stehen.
+        points_per_excercise_max[data[0]] = int(data[1])  # Eintrag ins Dictionary.
     else:
         points_per_excercise_max[data[0]] = data[1]  # Eintrag ins Dictionary.
 
@@ -41,7 +45,7 @@ for key in points_per_excercise_max:
 document = Document()
 
 
-def createStudent(
+def create_student(
     name,
     mss_note,
     note,
@@ -73,45 +77,136 @@ def createStudent(
     grade.font.size = Pt(16)
     document.add_paragraph()
     document.add_paragraph().add_run("Punkteverteilung:").font.size = Pt(14)
-    table = document.add_table(rows=3, cols=anzahl_aufgaben + 2)
-    table.style = "Light Shading"
-    document.add_paragraph()
-    percentage = document.add_paragraph().add_run(
-        "Die von dir erreichte Gesamtpunktzahl entspricht "
-        + str(prozent)
-        + " % der maximal erreichbaren Punkte."
-    )
-    percentage.font.size = Pt(14)
 
-    for row in table.rows:
-        for cell in row.cells:
-            if cell == table.rows[0].cells[0]:
+    # Um die Formatierung in der Tabelle beizubehalten, darf diese nicht zu viele Spalten haben.
+    # Als Grenze wird eine Länge von 11 Spalten verwendet. Ist die Tabelle länger, wird sie aufgeteilt.
+
+    if len(exercises) <= 11:
+        table = document.add_table(rows=3, cols=anzahl_aufgaben + 2)
+        table.style = "Light Shading"
+        document.add_paragraph()
+        percentage = document.add_paragraph().add_run(
+            "Die von dir erreichte Gesamtpunktzahl entspricht "
+            + str(prozent)
+            + " % der maximal erreichbaren Punkte."
+        )
+        percentage.font.size = Pt(14)
+
+        for row in table.rows:
+            for cell in row.cells:
+                if cell == table.rows[0].cells[0]:
+                    pass
+                else:
+                    cell.text = ""
+        table.rows[1].cells[0].text = "Punkte maximal"
+        table.rows[2].cells[0].text = "Punkte erreicht"
+
+        for i in range(len(table.columns)):
+            if i == 0:
+                pass
+            elif i == (len(table.columns) - 1):
+                table.rows[0].cells[i].text = "Gesamt"
+            else:
+                table.rows[0].cells[i].text = str(exercises[i - 1])
+
+        table_column_index = 1
+        for item in punkte_pro_aufgabe:
+            table.rows[1].cells[table_column_index].text = str(punkte_pro_aufgabe[item])
+            table_column_index += 1
+
+        table_column_index_2 = 1
+        for item in punkte_aufgaben_erreicht:
+            table.rows[2].cells[table_column_index_2].text = str(
+                punkte_aufgaben_erreicht[item]
+            )
+            table_column_index_2 += 1
+
+        table.rows[1].cells[(len(table.columns) - 1)].text = str(punkte_gesamt)
+        table.rows[2].cells[(len(table.columns) - 1)].text = str(erreicht_gesamt)
+
+    else:
+        table_1 = document.add_table(rows=3, cols=12)
+        table_1.style = "Light Shading"
+        document.add_paragraph()
+        table_2 = document.add_table(rows=3, cols=anzahl_aufgaben - 9)
+        table_2.style = "Light Shading"
+        document.add_paragraph()
+        percentage = document.add_paragraph().add_run(
+            "Die von dir erreichte Gesamtpunktzahl entspricht "
+            + str(prozent)
+            + " % der maximal erreichbaren Punkte."
+        )
+        percentage.font.size = Pt(14)
+
+        # Füllen der ersten Tabelle.
+        for row in table_1.rows:
+            for cell in row.cells:
+                if cell == table_1.rows[0].cells[0]:
+                    pass
+                else:
+                    cell.text = ""
+
+        table_1.rows[1].cells[0].text = "Punkte maximal"
+        table_1.rows[2].cells[0].text = "Punkte erreicht"
+
+        for i in range(len(table_1.columns)):
+            if i == 0:
                 pass
             else:
-                cell.text = ""
-    table.rows[1].cells[0].text = "Punkte maximal"
-    table.rows[2].cells[0].text = "Punkte erreicht"
+                table_1.rows[0].cells[i].text = str(exercises[i - 1])
 
-    for i in range(len(table.columns)):
-        if i == 0:
-            pass
-        elif i == (len(table.columns) - 1):
-            table.rows[0].cells[i].text = "Gesamt"
-        else:
-            table.rows[0].cells[i].text = str(exercises[i - 1])
+        table_column_index = 1
+        for index, item in enumerate(punkte_pro_aufgabe):
+            if index <= 10:
+                table_1.rows[1].cells[table_column_index].text = str(
+                    punkte_pro_aufgabe[item]
+                )
+                table_column_index += 1
 
-    tableColIndex = 1
-    for item in punkte_pro_aufgabe:
-        table.rows[1].cells[tableColIndex].text = str(punkte_pro_aufgabe[item])
-        tableColIndex += 1
+        table_column_index_2 = 1
+        for index, item in enumerate(punkte_aufgaben_erreicht):
+            if index <= 10:
+                table_1.rows[2].cells[table_column_index_2].text = str(
+                    punkte_aufgaben_erreicht[item]
+                )
+                table_column_index_2 += 1
 
-    tableColIndex2 = 1
-    for item in punkte_aufgaben_erreicht:
-        table.rows[2].cells[tableColIndex2].text = str(punkte_aufgaben_erreicht[item])
-        tableColIndex2 += 1
+        # Füllen der zweiten Tabelle.
+        for row in table_2.rows:
+            for cell in row.cells:
+                if cell == table_2.rows[0].cells[0]:
+                    pass
+                else:
+                    cell.text = ""
+        table_2.rows[1].cells[0].text = "Punkte maximal"
+        table_2.rows[2].cells[0].text = "Punkte erreicht"
 
-    table.rows[1].cells[(len(table.columns) - 1)].text = str(punkte_gesamt)
-    table.rows[2].cells[(len(table.columns) - 1)].text = str(erreicht_gesamt)
+        for i in range(len(table_2.columns)):
+            if i == 0:
+                pass
+            elif i == (len(table_2.columns) - 1):
+                table_2.rows[0].cells[i].text = "Gesamt"
+            else:
+                table_2.rows[0].cells[i].text = str(exercises[i + 10])
+
+        table_column_index = 1
+        for index, item in enumerate(punkte_pro_aufgabe):
+            if index > 10:
+                table_2.rows[1].cells[table_column_index].text = str(
+                    punkte_pro_aufgabe[item]
+                )
+                table_column_index += 1
+
+        table_column_index_2 = 1
+        for index, item in enumerate(punkte_aufgaben_erreicht):
+            if index > 10:
+                table_2.rows[2].cells[table_column_index_2].text = str(
+                    punkte_aufgaben_erreicht[item]
+                )
+                table_column_index_2 += 1
+
+        table_2.rows[1].cells[(len(table_2.columns) - 1)].text = str(punkte_gesamt)
+        table_2.rows[2].cells[(len(table_2.columns) - 1)].text = str(erreicht_gesamt)
 
 
 row_index = 2  # Laufindex, um Daten zu jedem Schüler zu sammeln (Start bei 2, da bei 0 und 1 die die Aufgaben stehen)
@@ -122,10 +217,9 @@ for row in range(3):
     else:
 
         # Dictionary, in dem einem Schüler zugeordnet wird, wie viele Punkte er pro Aufgabe erhalten hat:
-        name = df.iloc[row_index, 0]  # Name des Schülers der aktuellen Zeile
-        student = df.iloc[
-            row_index, 1 : len(exercises) + 1
-        ]  # Nur der Teil der aktuellen Zeile, in dem die Ergebnisse der einzelnen Aufgaben stehen
+        name = df.iloc[row_index, 0]  # Name des Schülers der aktuellen Zeile.
+        # Nur der Teil der aktuellen Zeile, in dem die Ergebnisse der einzelnen Aufgaben stehen
+        student = df.iloc[row_index, 1 : len(exercises) + 1]
         score_per_exercise = {}
 
         for index, item in enumerate(student):
@@ -151,7 +245,7 @@ for row in range(3):
 
         row_index += 1
 
-        createStudent(
+        create_student(
             name,
             int(results["MSS-Punkte"]),
             results["Note in Worten"],
