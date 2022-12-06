@@ -129,10 +129,19 @@ def create_DOCX():
         # immer der Wert der Datenreihe zugeordnet, die hier in der eckigen Klammer steht.
         row_one = df.iloc[0]
 
+        row_two = df.iloc[1]  # Zweite Zeile der Excel-Tabelle
+
+        row_four = df.iloc[3]  # Dritte Zeile der Excel-Tabelle
+
         # Die maximal erreichbare Punktzahl.
         # Ist so zu lesen: Gib mir den Wert aus der ersten Datenreihe, der in der Spalte
         # mit der Überschrift "Maximal erreichbare Gesamtpunktzahl" steht.
         points_max = row_one["Maximal erreichbare Gesamtpunktzahl"]
+
+        if (
+            str(points_max)[-1] == "0"
+        ):  # Falls .0, dann soll die Null nicht ausgegeben werden.
+            points_max = int(points_max)
 
         # Erstellung eines Dictionary, in dem jeder Aufgabe die zu erreichende Punktzahl zugeordnet wird:
         df_points = df[
@@ -156,14 +165,13 @@ def create_DOCX():
         for key in points_per_excercise_max:
             exercises.append(key)
 
-        row_two = df.iloc[1]  # Zweite Zeile der Excel-Tabelle
-
         # Notenspiegel (die Noten stehen in den Spalten 31-37 der Excel-Tabelle)
         overview_of_grades = [int(i) for i in row_two[31:37]]
-
-        # --------------------Funktion zur Erstellung der DOCX------------------------
+        average_score = round(row_four[31], 1)
 
         document = Document()
+
+        # --------------------Funktion zur Erstellung der DOCX------------------------
 
         def create_student(
             name,
@@ -241,6 +249,9 @@ def create_DOCX():
                         punkte_aufgaben_erreicht[item]
                     )
                     table_column_index_2 += 1
+
+                if str(erreicht_gesamt)[-1] == "0":
+                    erreicht_gesamt = int(erreicht_gesamt)
 
                 table.rows[1].cells[(len(table.columns) - 1)].text = str(punkte_gesamt)
                 table.rows[2].cells[(len(table.columns) - 1)].text = str(
@@ -325,6 +336,10 @@ def create_DOCX():
                 table_2.rows[1].cells[(len(table_2.columns) - 1)].text = str(
                     punkte_gesamt
                 )
+
+                if str(erreicht_gesamt)[-1] == "0":
+                    erreicht_gesamt = int(erreicht_gesamt)
+
                 table_2.rows[2].cells[(len(table_2.columns) - 1)].text = str(
                     erreicht_gesamt
                 )
@@ -340,7 +355,7 @@ def create_DOCX():
 
             document.add_paragraph()
             document.add_paragraph().add_run("Notenspiegel:").font.size = Pt(14)
-            table_overview = document.add_table(rows=2, cols=7)
+            table_overview = document.add_table(rows=3, cols=7)
             table_overview.style = "Light Shading"
             table_overview.rows[0].cells[0].text = "Note"
             table_overview.rows[0].cells[1].text = "1"
@@ -350,6 +365,8 @@ def create_DOCX():
             table_overview.rows[0].cells[5].text = "5"
             table_overview.rows[0].cells[6].text = "6"
             table_overview.rows[1].cells[0].text = "Anzahl"
+            table_overview.rows[2].cells[0].text = "Durchschnitt"
+            table_overview.rows[2].cells[1].text = str(average_score)
 
             for i in range(len(table_overview.columns)):
                 if i == 0:
