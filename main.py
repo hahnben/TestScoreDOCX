@@ -2,7 +2,9 @@ import pandas as pd
 import customtkinter
 from docx import Document
 from docx.shared import Pt
+from docx.shared import Cm
 from docx.enum.text import WD_LINE_SPACING
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
@@ -45,10 +47,21 @@ process_file_image = customtkinter.CTkImage(
     Image.open("images/process-file.png").resize((30, 30), Image.Resampling.LANCZOS)
 )
 
-# Statusbalken
-# progressbar = customtkinter.CTkProgressBar(master=root)
-# progressbar.configure(width=190, determinate_speed=2)
-# progressbar.set(0)
+# Fenster für Statusbalken
+
+
+# def progress_window():
+#     progress = Toplevel(root)
+#     progress.title("")
+#     progress.geometry("250x100")
+#     progress.minsize(250, 100)
+#     progress.maxsize(250, 100)
+#     progressbar = customtkinter.CTkProgressBar(master=progress)
+#     progressbar.configure(width=150, determinate_speed=2)
+#     progressbar.set(0)
+#     progressbar.place(relx=0.5, rely=0.5, anchor=customtkinter.CENTER)
+#     progressbar.start()
+
 
 # Globale Variable, in der der Pfad zur Excel-Datei gespeichert wird
 source_path = ""
@@ -169,6 +182,45 @@ def create_DOCX():
         overview_of_grades = [int(i) for i in row_two[31:37]]
         average_score = round(row_four[31], 1)
 
+        # Liste erstellen, in der nur die Rohpunkte in Prozent enthalten sind
+        df_percent = df[
+            ["Notenschlüssel"]
+        ]  # Neues df, in dem nur die Rohpunkte in Prozent relevant sind
+
+        grading_scale_percent = []
+
+        for pos, data in df_percent.iterrows():
+            if pos == 0 or pos > 16:
+                pass
+            else:
+                grading_scale_percent.append(data[0])
+
+        # Liste erstellen, in der nur die zu den Rohpunkten passenden MSS-Noten enthalten sind
+        df_mss = df[
+            ["Unnamed: 39"]
+        ]  # Neues df, in dem nur die MSS-Punkte relevant sind
+
+        grading_scale_mss = []
+
+        for pos, data in df_mss.iterrows():
+            if pos == 0 or pos > 16:
+                pass
+            else:
+                grading_scale_mss.append(data[0])
+
+        # Liste erstellen, in der nur die zu den Rohpunkten passenden Noten in Worten enthalten sind
+        df_grades_in_words = df[
+            ["Unnamed: 40"]
+        ]  # Neues df, in dem nur die Noten in Worten relevant sind
+
+        grading_scale_words = []
+
+        for pos, data in df_grades_in_words.iterrows():
+            if pos == 0 or pos > 16:
+                pass
+            else:
+                grading_scale_words.append(data[0])
+
         document = Document()
 
         # --------------------Funktion zur Erstellung der DOCX------------------------
@@ -184,6 +236,12 @@ def create_DOCX():
             erreicht_gesamt,
             prozent,
         ):
+            # --------------------------Seitenränder der DOCX--------------------------
+
+            sections = document.sections
+            for section in sections:
+                section.top_margin = Cm(1)
+                section.bottom_margin = Cm(1)
 
             # -----------------------------Kopf der DOCX------------------------------
 
@@ -195,18 +253,16 @@ def create_DOCX():
                 "_________________________________________________________________________________________________________"
             )
             line.paragraph_format.space_before = Pt(1)
-            document.add_paragraph("")
             paragraph = document.add_paragraph()
             paragraph.add_run("MSS-Punkte: ").font.size = Pt(16)
             grade = paragraph.add_run(str(mss_note))
             grade.bold = True
             grade.font.size = Pt(16)
-            paragraph = document.add_paragraph()
+            paragraph.add_run("             ")
             paragraph.add_run("Note: ").font.size = Pt(16)
             grade = paragraph.add_run(note)
             grade.bold = True
             grade.font.size = Pt(16)
-            document.add_paragraph()
             document.add_paragraph().add_run("Punkteverteilung:").font.size = Pt(14)
 
             # ------------------Ergebnisse der einzelnen Aufgaben--------------------
@@ -217,7 +273,7 @@ def create_DOCX():
             if len(exercises) <= 11:
                 table = document.add_table(rows=3, cols=anzahl_aufgaben + 2)
                 table.style = "Light Shading"
-                document.add_paragraph()
+                # document.add_paragraph()
 
                 for row in table.rows:
                     for cell in row.cells:
@@ -353,7 +409,7 @@ def create_DOCX():
 
             # ---------------------------Notenspiegel----------------------------
 
-            document.add_paragraph()
+            # document.add_paragraph()
             document.add_paragraph().add_run("Notenspiegel:").font.size = Pt(14)
             table_overview = document.add_table(rows=3, cols=7)
             table_overview.style = "Light Shading"
@@ -375,6 +431,28 @@ def create_DOCX():
                     table_overview.rows[1].cells[i].text = str(
                         overview_of_grades[i - 1]
                     )
+
+            # --------------------------Notenschlüssel--------------------------
+
+            document.add_paragraph()
+            document.add_paragraph().add_run(
+                "Angewendeter Notenschlüssel:"
+            ).font.size = Pt(14)
+            table_grading_scale = document.add_table(rows=17, cols=3)
+            table_grading_scale.style = "Light Shading"
+            table_grading_scale.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            table_grading_scale.rows[0].cells[0].text = "Rohpunkte in %"
+            table_grading_scale.rows[0].cells[1].text = "MSS-Punkte"
+            table_grading_scale.rows[0].cells[2].text = "Note in Worten"
+
+            for i, element in enumerate(grading_scale_percent):
+                table_grading_scale.rows[i + 1].cells[0].text = str(element)
+
+            for i, element in enumerate(grading_scale_mss):
+                table_grading_scale.rows[i + 1].cells[1].text = str(element)
+
+            for i, element in enumerate(grading_scale_words):
+                table_grading_scale.rows[i + 1].cells[2].text = str(element)
 
         # -------------Wiederholtes Aufrufen von create_tudent()-------------
 
@@ -427,10 +505,10 @@ def create_DOCX():
                 )
                 document.add_page_break()  # Sorgt dafür, dass mit jedem Schüler eine neue Seite angefangen wird.
 
-        document.save(r"C:\Users\Nutzer\Desktop\Klausurergebnisse.docx")
-        # document.save(
-        #     destPath + "//Klausurergebnisse.docx"
-        # )  # Erstellt am Ende die eigentliche DOCX.
+        # document.save(r"C:\Users\Nutzer\Desktop\Klausurergebnisse.docx")
+        document.save(
+            dest_path + "//Klausurergebnisse.docx"
+        )  # Erstellt am Ende die eigentliche DOCX.
 
     else:
         message = messagebox.showinfo(
