@@ -157,10 +157,10 @@ def create_DOCX():
             points_max = int(points_max)
 
         # Erstellung eines Dictionary, in dem jeder Aufgabe die zu erreichende Punktzahl zugeordnet wird:
-        df_points = df[
-            ["Name der Aufgabe", "Maximal erreichbare Punktzahl der Aufgabe"]
-        ]
+        df_points = df[["Name Aufgabe", "Maximal erreichbare Punktzahl pro Aufgabe"]]
+
         points_per_excercise_max = {}
+
         for pos, data in df_points.iterrows():
             if pd.isna(data[0]):  # Falls keine Zahl eingetragen ist, überspringen.
                 pass
@@ -176,7 +176,11 @@ def create_DOCX():
         # Liste der Aufgaben, mit den Namen, wie sie auch in der Arbeit vergeben wurden:
         exercises = []
         for key in points_per_excercise_max:
-            exercises.append(key)
+            key = str(key)
+            if len(key) > 1:
+                if key[-2] == ".":
+                    key = key[:-1]
+            exercises.append(str(key))
 
         # Notenspiegel (die Noten stehen in den Spalten 31-37 der Excel-Tabelle)
         overview_of_grades = [int(i) for i in row_two[31:37]]
