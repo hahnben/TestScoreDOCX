@@ -131,11 +131,11 @@ def create_DOCX():
     global dir_chosen
 
     if file_chosen and dir_chosen:
-
         # ---------------------Auslesen der Excel-Tabelle-----------------------
 
         # Erzeugen eines Data-Frames.
         df = pd.read_excel(source_path)
+        # df = df.dropna(subset="Aufgabe")
 
         # Erste Datenreihe (also die zweite Zeile des Blattes). Gibt eine Serie zurück.
         # Dabei ist der ersten Zeile des Blattes (quasi die Überschrift jeder Spalte)
@@ -458,15 +458,18 @@ def create_DOCX():
             for i, element in enumerate(grading_scale_words):
                 table_grading_scale.rows[i + 1].cells[2].text = str(element)
 
-        # -------------Wiederholtes Aufrufen von create_tudent()-------------
+        # -------------Wiederholtes Aufrufen von create_student()-------------
 
         row_index = 2  # Laufindex, um Daten zu jedem Schüler zu sammeln (Start bei 2, da bei 0 und 1 die die Aufgaben stehen)
 
-        for row in range(37):
-            if df.iloc[row_index, 0] == 0:
+        for row in range(len(df) - 2):
+            # Die nächste Zeile fängt zwei Fälle ab:
+            # 1. Am Ende der Schülerliste folgen nur noch Nullen. Hier soll nichts geschehen.
+            # 2. Wenn ein Schüler nicht mitgeschrieben hat, steht in jeder Zelle seiner Zeile NaN.
+            # Eine solche Zeile muss übersprungen werden, damit es keinen Fehler gibt.
+            if df.iloc[row_index, 0] == 0 or pd.isna(df.iloc[row_index, 1]):
                 pass
             else:
-
                 # Dictionary, in dem einem Schüler zugeordnet wird, wie viele Punkte er pro Aufgabe erhalten hat:
                 name = df.iloc[row_index, 0]  # Name des Schülers der aktuellen Zeile.
                 # Nur der Teil der aktuellen Zeile, in dem die Ergebnisse der einzelnen Aufgaben stehen
@@ -494,8 +497,6 @@ def create_DOCX():
                     results[labels[index]] = item
                     index += 1
 
-                row_index += 1
-
                 create_student(
                     name,
                     int(results["MSS-Punkte"]),
@@ -508,6 +509,7 @@ def create_DOCX():
                     int(results["Prozent gesamt"]),
                 )
                 document.add_page_break()  # Sorgt dafür, dass mit jedem Schüler eine neue Seite angefangen wird.
+            row_index += 1
 
         # document.save(r"C:\Users\Nutzer\Desktop\Klausurergebnisse.docx")
         document.save(
