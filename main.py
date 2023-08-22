@@ -162,7 +162,9 @@ def create_DOCX():
         points_per_excercise_max = {}
 
         for pos, data in df_points.iterrows():
-            if pd.isna(data[0]):  # Falls keine Zahl eingetragen ist, überspringen.
+            if (
+                pd.isna(data[0]) or data[0] == 0
+            ):  # Falls keine Zahl eingetragen ist oder die Zahl eine Null ist, überspringen.
                 pass
             # Überprüfen, ob die zu erreichende Punktzahl eine Dezimalstelle hat.
             elif str(data[1])[-1] == "0":
@@ -477,7 +479,11 @@ def create_DOCX():
                 score_per_exercise = {}
 
                 for index, item in enumerate(student):
-                    score_per_exercise[exercises[index]] = item
+                    grade = str(item)
+                    if grade[-1] == "0":
+                        score_per_exercise[exercises[index]] = grade[:-2]
+                    else:
+                        score_per_exercise[exercises[index]] = grade
 
                 # Dictionary, in dem einem Schüler die erreichte Gesamtpunktzahl, die Prozent der zu erreichenden Gesamtpunktzahl,
                 # die MSS-Punkte, und die Note in Worten zugeordnet werden
