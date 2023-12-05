@@ -119,7 +119,9 @@ for row in range(len(df) - 2):
 
         for index, item in enumerate(student):
             grade = str(item)
-            if grade[-1] == "0":
+            if grade == "0":
+                score_per_exercise[exercises[index]] = grade
+            elif grade[-1] == "0":
                 score_per_exercise[exercises[index]] = grade[:-2]
             else:
                 score_per_exercise[exercises[index]] = grade
@@ -141,5 +143,5 @@ for row in range(len(df) - 2):
         for item in student_2:
             results[labels[index]] = item
             index += 1
-# print(student)
-print(score_per_exercise)
+        print(score_per_exercise)
+    row_index += 1

@@ -84,7 +84,7 @@ def choose_file():
 
     # Pfad für die Exceldatei vom Benutzer angeben lassen und in einer Variablen speichern
     root.filename = filedialog.askopenfilename(
-        initialdir="C://",
+        initialdir="C://Users/Nutzer/Desktop",
         title="Excel-Datei wählen",
         filetypes=[("Excel Dateien", "*.xlsx")],
     )
@@ -107,7 +107,7 @@ def choose_dest():
     if file_chosen:
         # Pfad für den Zielordner vom Benutzer angeben lassen und in einer Variablen speichern
         root.filename = filedialog.askdirectory(
-            initialdir="C://", title="Zielordner wählen"
+            initialdir="C://Users/Nutzer/Desktop", title="Zielordner wählen"
         )
         global dest_path
         dest_path = root.filename
@@ -123,8 +123,7 @@ def choose_dest():
 def create_DOCX():
     """
     Diese Funktion wird aufgerufen, wenn der Button zum Erstellen der DOCX gedrückt wird.
-    Hier passiert dasselbe wie in dem Programm,
-    das ohne GUI läuft.
+    Hier passiert dasselbe wie in dem Programm, das ohne GUI läuft.
     """
 
     global file_chosen
@@ -480,8 +479,13 @@ def create_DOCX():
 
                 for index, item in enumerate(student):
                     grade = str(item)
-                    if grade[-1] == "0":
+                    # Falls 0 Punkte erreicht wurden, wird dies eingetragen
+                    if grade == "0":
+                        score_per_exercise[exercises[index]] = grade
+                    # Falls man z.B. 5.0 erreicht hat, soll nur 5 eingetragen werden
+                    elif grade[-1] == "0":
                         score_per_exercise[exercises[index]] = grade[:-2]
+                    # In allen anderen Fällen wird der tatsächliche Wert übernommen
                     else:
                         score_per_exercise[exercises[index]] = grade
 
